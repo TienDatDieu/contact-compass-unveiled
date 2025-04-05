@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import Index from "./pages/Home";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -19,7 +18,6 @@ const queryClient = new QueryClient();
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   
-  // Check for auth status on mount (will use Supabase later)
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('authToken');
