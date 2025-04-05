@@ -3,12 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import LookupForm from '../components/LookupForm';
 import ResultCard, { ContactResult } from '../components/ResultCard';
+import UserSearchResults, { UserSearchResult } from '../components/UserSearchResults';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
 import { lookupEmail } from '../services/lookupService';
+import { searchUsersByProject } from '@/lib/supabase';
 
 interface HistoryItem extends ContactResult {
   timestamp: string;
@@ -24,6 +28,11 @@ const Dashboard = () => {
   const [result, setResult] = useState<ContactResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
+  // Project search state
+  const [projectQuery, setProjectQuery] = useState<string>('Cuong Ho Project');
+  const [isProjectSearching, setIsProjectSearching] = useState(false);
+  const [projectResults, setProjectResults] = useState<UserSearchResult[]>([]);
+
   useEffect(() => {
     // Check if there's an email in the URL params
     const params = new URLSearchParams(location.search);
@@ -32,6 +41,9 @@ const Dashboard = () => {
     if (emailParam) {
       handleSearch(emailParam);
     }
+
+    // Search for "Cuong Ho Project" by default when the page loads
+    handleProjectSearch();
   }, [location.search]);
   
   const handleSearch = async (email: string) => {
@@ -72,6 +84,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleProjectSearch = async () => {
+    setIsProjectSearching(true);
+    try {
+      const users = await searchUsersByProject(projectQuery);
+      setProjectResults(users || []);
+    } catch (error) {
+      console.error('Project search error:', error);
+      toast({
+        title: 'Search Error',
+        description: 'Failed to search for project users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProjectSearching(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <h1 className="text-2xl font-bold mb-6">{t('dashboard.welcome')}</h1>
@@ -79,6 +108,7 @@ const Dashboard = () => {
       <Tabs defaultValue="lookup" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="lookup">{t('lookup.title')}</TabsTrigger>
+          <TabsTrigger value="project-search">Project Search</TabsTrigger>
           <TabsTrigger value="history">{t('dashboard.recentSearches')}</TabsTrigger>
         </TabsList>
         
@@ -104,6 +134,45 @@ const Dashboard = () => {
               <ResultCard result={result} />
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="project-search" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Project User Search</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    placeholder="Project name"
+                    value={projectQuery}
+                    onChange={(e) => setProjectQuery(e.target.value)}
+                    className="h-12"
+                    disabled={isProjectSearching}
+                  />
+                </div>
+                <Button 
+                  onClick={handleProjectSearch}
+                  className="h-12 px-6 bg-blue-600 hover:bg-blue-700"
+                  disabled={isProjectSearching}
+                >
+                  {isProjectSearching ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <span className="mr-2">🔍</span>
+                  )}
+                  Search Users
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <UserSearchResults 
+            results={projectResults}
+            isLoading={isProjectSearching} 
+          />
         </TabsContent>
         
         <TabsContent value="history">
