@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { User, Building, Mail } from 'lucide-react';
 
 export interface UserSearchResult {
   name: string;
@@ -45,9 +46,9 @@ const UserSearchResults = ({ results, isLoading = false }: UserSearchResultsProp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Company</TableHead>
+              <TableHead><User className="mr-2 inline-block" size={16} />Name</TableHead>
+              <TableHead><Mail className="mr-2 inline-block" size={16} />Email</TableHead>
+              <TableHead><Building className="mr-2 inline-block" size={16} />Company</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
