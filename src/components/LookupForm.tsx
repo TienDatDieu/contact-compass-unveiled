@@ -41,8 +41,8 @@ const LookupForm = ({ onSubmit, isProcessing = false }: LookupFormProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="w-full max-w-xl mx-auto">
+      <form onSubmit={handleSubmit}>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <Input
@@ -56,7 +56,7 @@ const LookupForm = ({ onSubmit, isProcessing = false }: LookupFormProps) => {
           </div>
           <Button 
             type="submit" 
-            className="h-12 px-6"
+            className="h-12 px-6 bg-blue-600 hover:bg-blue-700"
             disabled={isProcessing}
           >
             {isProcessing ? (

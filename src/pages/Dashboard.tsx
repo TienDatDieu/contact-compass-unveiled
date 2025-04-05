@@ -8,6 +8,7 @@ import ResultCard, { ContactResult } from '../components/ResultCard';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { lookupEmail } from '../services/lookupService';
 
 interface HistoryItem extends ContactResult {
   timestamp: string;
@@ -33,51 +34,47 @@ const Dashboard = () => {
     }
   }, [location.search]);
   
-  const handleSearch = (email: string) => {
+  const handleSearch = async (email: string) => {
     setSearchQuery(email);
     setIsSearching(true);
     setResult(null);
     
-    // Here we'll connect with Supabase and external API in future
-    // Simulating lookup for now
-    setTimeout(() => {
-      // Generate mock data for demonstration
-      const mockData: ContactResult = {
-        email,
-        name: {
-          first: email.split('@')[0].split('.')[0],
-          last: email.split('@')[0].split('.')[1] || 'Smith'
-        },
-        company: {
-          name: email.split('@')[1].split('.')[0].charAt(0).toUpperCase() + email.split('@')[1].split('.')[0].slice(1),
-          website: email.split('@')[1],
-          position: 'Product Manager'
-        },
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        social: {
-          linkedin: 'https://linkedin.com/in/' + email.split('@')[0],
-          twitter: 'https://twitter.com/' + email.split('@')[0]
-        },
-        confidence_score: Math.floor(Math.random() * 30) + 70 // 70-99
-      };
+    try {
+      // Use our lookup service to search for the email
+      const contactData = await lookupEmail(email);
       
-      setResult(mockData);
-      
-      // Add to history
-      const historyItem: HistoryItem = {
-        ...mockData,
-        timestamp: new Date().toISOString()
-      };
-      
-      setHistory(prev => [historyItem, ...prev.slice(0, 9)]);
+      if (contactData) {
+        setResult(contactData);
+        
+        // Add to history
+        const historyItem: HistoryItem = {
+          ...contactData,
+          timestamp: new Date().toISOString()
+        };
+        
+        setHistory(prev => [historyItem, ...prev.slice(0, 9)]);
+      } else {
+        toast({
+          title: t('lookup.noResults'),
+          description: t('lookup.tryDifferentEmail'),
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: t('lookup.error'),
+        description: t('lookup.errorTryAgain'),
+        variant: 'destructive',
+      });
+    } finally {
       setIsSearching(false);
-    }, 2000);
+    }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6">{t('dashboard.welcome')}</h1>
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <h1 className="text-2xl font-bold mb-6">{t('dashboard.welcome')}</h1>
       
       <Tabs defaultValue="lookup" className="w-full">
         <TabsList className="mb-4">
