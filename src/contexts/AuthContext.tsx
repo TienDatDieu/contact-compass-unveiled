@@ -56,26 +56,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // Check for existing session on load
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      setLoading(false);
-      
-      // Check admin status for existing session
-      if (initialSession?.user) {
-        supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', initialSession.user.id)
-          .single()
-          .then(({ data: profileData }) => {
+    const checkSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        // Check admin status for existing session
+        if (initialSession?.user) {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('is_admin')
+              .eq('id', initialSession.user.id)
+              .single();
+            
             setIsAdmin(profileData?.is_admin || false);
-          })
-          .catch(error => {
+          } catch (error) {
             console.error('Error fetching admin status:', error);
-          });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
+    
+    checkSession();
     
     return () => {
       subscription.unsubscribe();
