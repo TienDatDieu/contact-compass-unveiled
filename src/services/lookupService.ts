@@ -2,9 +2,12 @@
 import { supabase } from '@/lib/supabase';
 
 export interface ContactResult {
-  name: string;
+  name: {
+    first: string;
+    last: string;
+  };
   email: string;
-  company: string;
+  company?: string;
   position?: string;
   phone?: string;
   location?: string;
@@ -28,8 +31,16 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
     
     if (!error && existingContact) {
       // Contact exists in database, return formatted result
+      const fullName = existingContact.full_name || `${existingContact.first_name || ''} ${existingContact.last_name || ''}`.trim();
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
       return {
-        name: existingContact.full_name || `${existingContact.first_name || ''} ${existingContact.last_name || ''}`.trim(),
+        name: {
+          first: firstName,
+          last: lastName
+        },
         email: existingContact.email,
         company: existingContact.company || '',
         position: existingContact.position,
@@ -50,7 +61,7 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
     try {
       // Get the user's session token for authorization
       const { data: authData } = await supabase.auth.getSession();
-      const authToken = authData.session?.access_token || '';
+      const authToken = authData?.session?.access_token || '';
       
       const response = await fetch(`https://nwccehzvwieeritmqkso.supabase.co/functions/v1/github-info`, {
         method: 'POST',
@@ -73,8 +84,16 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
     
     // If we got GitHub data, return it
     if (githubData) {
+      const displayName = githubData.name || email.split('@')[0];
+      const nameParts = displayName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
       const mockData: ContactResult = {
-        name: githubData.name || email.split('@')[0],
+        name: {
+          first: firstName,
+          last: lastName
+        },
         email,
         company: githubData.company || '',
         position: 'Software Developer',
@@ -96,7 +115,7 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
             .from('contacts')
             .upsert({
               email,
-              full_name: mockData.name,
+              full_name: `${mockData.name.first} ${mockData.name.last}`.trim(),
               company: mockData.company,
               position: mockData.position,
               linkedin_url: mockData.social?.linkedin,
