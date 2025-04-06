@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   isLoggedIn: boolean;
@@ -13,6 +14,7 @@ interface NavbarProps {
 
 const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
   const { t } = useLanguage();
+  const { user, isGuest } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -48,6 +50,11 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
             
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
+                {isGuest && !user && (
+                  <span className="text-sm text-amber-600 font-medium px-2 py-1 bg-amber-50 rounded-full">
+                    Guest Mode
+                  </span>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -55,7 +62,7 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
                   className="flex items-center"
                 >
                   <LogOut className="h-4 w-4 mr-1" />
-                  {t('nav.logout')}
+                  {isGuest && !user ? 'Exit Guest' : t('nav.logout')}
                 </Button>
               </div>
             ) : (
@@ -106,17 +113,26 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
               )}
               
               {isLoggedIn ? (
-                <Button 
-                  variant="ghost" 
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className="flex items-center justify-start"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t('nav.logout')}
-                </Button>
+                <>
+                  {isGuest && !user && (
+                    <div className="py-2">
+                      <span className="text-sm text-amber-600 font-medium px-2 py-1 bg-amber-50 rounded-full">
+                        Guest Mode
+                      </span>
+                    </div>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center justify-start"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {isGuest && !user ? 'Exit Guest' : t('nav.logout')}
+                  </Button>
+                </>
               ) : (
                 <div className="flex flex-col space-y-3">
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>

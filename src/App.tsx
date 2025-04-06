@@ -18,13 +18,14 @@ const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
   
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
-  if (!user) {
+  // Allow access for authenticated users or guests
+  if (!user && !isGuest) {
     return <Navigate to="/login" />;
   }
   
@@ -52,11 +53,11 @@ const App = () => {
 
 // Separate component to use auth hooks inside router
 const AppContent = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={!!user} onLogout={signOut} />
+      <Navbar isLoggedIn={!!user || isGuest} onLogout={signOut} />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Index />} />

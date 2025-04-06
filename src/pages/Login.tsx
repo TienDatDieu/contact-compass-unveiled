@@ -14,18 +14,18 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
-  const { signIn, user } = useAuth();
+  const { signIn, user, isGuest, continueAsGuest } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in or in guest mode
   useEffect(() => {
-    if (user) {
+    if (user || isGuest) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, isGuest, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +39,11 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGuestAccess = () => {
+    continueAsGuest();
+    navigate('/dashboard');
   };
   
   return (
@@ -84,6 +89,26 @@ const Login = () => {
               {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
               {t('login.button')}
             </Button>
+            
+            <div className="relative w-full my-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-500">Or</span>
+              </div>
+            </div>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleGuestAccess}
+              disabled={isLoading}
+            >
+              Continue as Guest
+            </Button>
+            
             <div className="text-sm text-center text-muted-foreground">
               {t('login.noAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline">

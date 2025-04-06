@@ -12,6 +12,8 @@ type AuthContextType = {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isGuest: boolean;
+  continueAsGuest: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,6 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setIsGuest(false);
     } catch (error: any) {
       toast({
         title: 'Sign out failed',
@@ -131,6 +135,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         variant: 'destructive',
       });
     }
+  };
+
+  const continueAsGuest = () => {
+    setIsGuest(true);
+    toast({
+      title: 'Continuing as guest',
+      description: 'You have limited access to features.',
+    });
   };
   
   return (
@@ -141,7 +153,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signIn, 
       signUp, 
       signOut,
-      isAdmin
+      isAdmin,
+      isGuest,
+      continueAsGuest
     }}>
       {children}
     </AuthContext.Provider>
