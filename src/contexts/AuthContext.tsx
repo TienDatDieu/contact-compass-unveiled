@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message,
         variant: 'destructive',
       });
-      throw error;
+      throw error; // Re-throw to allow caller to handle it
     }
   };
   
@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message,
         variant: 'destructive',
       });
-      throw error;
+      throw error; // Re-throw for handling by caller
     }
   };
   

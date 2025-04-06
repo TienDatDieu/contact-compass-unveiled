@@ -34,6 +34,8 @@ serve(async (req) => {
       name: username.charAt(0).toUpperCase() + username.slice(1),
       company: email.includes('gmail') ? 'Independent' : email.split('@')[1].split('.')[0],
       github_url: `https://github.com/${username}`,
+      linkedin_url: `https://linkedin.com/in/${username}`,
+      twitter_url: `https://twitter.com/${username}`,
       avatar_url: `https://ui-avatars.com/api/?name=${username}&background=random`,
     };
     

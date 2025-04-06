@@ -38,7 +38,8 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
         location: existingContact.location,
         social: {
           linkedin: existingContact.linkedin_url,
-          twitter: existingContact.twitter_url
+          twitter: existingContact.twitter_url,
+          other: existingContact.github_url
         },
         avatar: existingContact.avatar_url,
         confidence_score: existingContact.confidence_score
@@ -48,11 +49,15 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
     // If not in database, try to fetch from GitHub info
     let githubData = null;
     try {
+      // Get the user's session token for authorization
+      const { data: authData } = await supabase.auth.getSession();
+      const authToken = authData.session?.access_token || '';
+      
       const response = await fetch(`https://nwccehzvwieeritmqkso.supabase.co/functions/v1/github-info`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ email })
       });
@@ -83,9 +88,9 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
         phone: '+1 (555) 123-4567',
         location: 'Unknown',
         social: {
-          github: githubData.github_url,
           linkedin: githubData.linkedin_url,
-          twitter: githubData.twitter_url
+          twitter: githubData.twitter_url,
+          other: githubData.github_url
         },
         avatar: githubData.avatar_url,
         confidence_score: 70
@@ -103,7 +108,7 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
           position: mockData.company?.position,
           linkedin_url: mockData.social?.linkedin,
           twitter_url: mockData.social?.twitter,
-          github_url: mockData.social?.github,
+          github_url: mockData.social?.other,
           avatar_url: mockData.avatar,
           phone: mockData.phone,
           location: mockData.location,
