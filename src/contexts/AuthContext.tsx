@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setIsAdmin(profileData?.is_admin || false);
             } catch (error) {
               console.error('Error fetching admin status:', error);
+              setIsAdmin(false);
             }
           }, 0);
         } else {
@@ -74,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsAdmin(profileData?.is_admin || false);
           } catch (error) {
             console.error('Error fetching admin status:', error);
+            setIsAdmin(false);
           }
         }
       } catch (error) {

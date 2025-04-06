@@ -33,6 +33,10 @@ const Login = () => {
     
     try {
       await signIn(email, password);
+      toast({
+        title: 'Login successful',
+        description: 'Welcome back!',
+      });
       navigate('/dashboard');
     } catch (error) {
       // Error is already handled in the auth context
@@ -52,6 +56,12 @@ const Login = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">{t('login.title')}</CardTitle>
           <CardDescription>Enter your email and password to sign in</CardDescription>
+          
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-md text-sm text-amber-800">
+            <p className="font-medium">Demo Account:</p>
+            <p>Email: leo@gmail.com</p>
+            <p>Password: 123456</p>
+          </div>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
