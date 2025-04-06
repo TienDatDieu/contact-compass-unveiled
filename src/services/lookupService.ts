@@ -7,8 +7,11 @@ export interface ContactResult {
     last: string;
   };
   email: string;
-  company?: string;
-  position?: string;
+  company?: {
+    name: string;
+    website?: string;
+    position?: string;
+  };
   phone?: string;
   location?: string;
   social?: {
@@ -42,8 +45,10 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
           last: lastName
         },
         email: existingContact.email,
-        company: existingContact.company || '',
-        position: existingContact.position,
+        company: {
+          name: existingContact.company || '',
+          position: existingContact.position
+        },
         phone: existingContact.phone,
         location: existingContact.location,
         social: {
@@ -95,8 +100,10 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
           last: lastName
         },
         email,
-        company: githubData.company || '',
-        position: 'Software Developer',
+        company: {
+          name: githubData.company || '',
+          position: 'Software Developer'
+        },
         phone: '+1 (555) 123-4567',
         location: 'Unknown',
         social: {
@@ -116,8 +123,8 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
             .upsert({
               email,
               full_name: `${mockData.name.first} ${mockData.name.last}`.trim(),
-              company: mockData.company,
-              position: mockData.position,
+              company: mockData.company.name,
+              position: mockData.company.position,
               linkedin_url: mockData.social?.linkedin,
               twitter_url: mockData.social?.twitter,
               github_url: mockData.social?.other,
