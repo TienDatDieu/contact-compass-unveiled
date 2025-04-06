@@ -41,6 +41,63 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          confidence_score: number | null
+          created_at: string
+          email: string
+          first_name: string | null
+          full_name: string | null
+          github_url: string | null
+          id: string
+          last_name: string | null
+          linkedin_url: string | null
+          location: string | null
+          phone: string | null
+          position: string | null
+          twitter_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          position?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          position?: string | null
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enrichment_requests: {
         Row: {
           credits_used: number | null
@@ -115,6 +172,38 @@ export type Database = {
         }
         Relationships: []
       }
+      lookup_history: {
+        Row: {
+          contact_id: string | null
+          email_queried: string
+          id: string
+          search_timestamp: string
+          user_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          email_queried: string
+          id?: string
+          search_timestamp?: string
+          user_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          email_queried?: string
+          id?: string
+          search_timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_history_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           id: string
@@ -136,6 +225,57 @@ export type Database = {
           monthly_price?: number | null
           name?: string
           overage_price?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          is_admin: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          is_admin?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      todos: {
+        Row: {
+          created_at: string
+          id: string
+          is_complete: boolean | null
+          task: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean | null
+          task: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean | null
+          task?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -214,7 +354,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_or_create_contact: {
+        Args: {
+          p_email: string
+          p_search_info?: Json
+        }
+        Returns: string
+      }
+      log_contact_lookup: {
+        Args: {
+          p_user_id: string
+          p_email: string
+          p_contact_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

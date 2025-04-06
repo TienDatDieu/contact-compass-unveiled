@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,17 +8,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { signUp, user } = useAuth();
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,23 +44,16 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Here we'll connect with Supabase in future
-      // Simulating registration for now
-      setTimeout(() => {
-        toast({
-          title: t('register.success'),
-          description: `Welcome to Contact Compass, ${name}!`,
-        });
-        
-        navigate('/dashboard');
-        setIsLoading(false);
-      }, 1500);
-    } catch (error) {
+      await signUp(email, password, name);
       toast({
-        title: t('register.error'),
-        description: error instanceof Error ? error.message : String(error),
-        variant: 'destructive',
+        title: t('register.success'),
+        description: `Welcome to Contact Compass, ${name}!`,
       });
+      
+      // We don't navigate here as the user needs to confirm their email first
+    } catch (error) {
+      // Error is already handled in the auth context
+    } finally {
       setIsLoading(false);
     }
   };
@@ -97,6 +99,7 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 disabled={isLoading}
               />
             </div>
@@ -108,6 +111,7 @@ const Register = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                minLength={6}
                 disabled={isLoading}
               />
             </div>

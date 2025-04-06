@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,41 +8,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { signIn, user } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Here we'll connect with Supabase in future
-      // Simulating login for now
-      setTimeout(() => {
-        // Simulate success for demonstration
-        toast({
-          title: t('login.success'),
-          description: `Welcome back ${email.split('@')[0]}!`,
-        });
-        
-        // Navigate to dashboard
-        navigate('/dashboard');
-        
-        setIsLoading(false);
-      }, 1500);
+      await signIn(email, password);
+      navigate('/dashboard');
     } catch (error) {
-      toast({
-        title: t('login.error'),
-        description: error instanceof Error ? error.message : String(error),
-        variant: 'destructive',
-      });
+      // Error is already handled in the auth context
+    } finally {
       setIsLoading(false);
     }
   };
