@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://nwccehzvwieeritmqkso.supabase.co';
@@ -79,32 +80,14 @@ export async function searchUsersByProject(projectName: string) {
   }
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  // Since we can't use bcryptjs in the browser environment, we'll use a simple hash function
-  // NOTE: This is NOT secure for production! In a real app, use proper password hashing
-  // This is just for demonstration purposes
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  
-  // Convert hash to hex string
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-export async function saveUser(userData: { name: string, email: string, password: string, company?: string, project?: string }) {
+export async function saveUser(userData: { name: string, email: string, company?: string, project?: string }) {
   try {
-    // Hash the password
-    const password_hash = await hashPassword(userData.password);
-    
-    // Save the user with the hashed password
+    // Insert the user using Supabase Auth and then add additional data to the profiles table
     const { data, error } = await supabase
       .from('users')
       .insert({
         name: userData.name,
         email: userData.email,
-        password_hash,
         company: userData.company || null,
       })
       .select();

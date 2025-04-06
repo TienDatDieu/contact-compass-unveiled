@@ -50,7 +50,8 @@ const Register = () => {
         description: `Welcome to Contact Compass, ${name}!`,
       });
       
-      // We don't navigate here as the user needs to confirm their email first
+      // Navigate to login after successful registration
+      navigate('/login');
     } catch (error) {
       // Error is already handled in the auth context
     } finally {

@@ -9,38 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      api_keys: {
-        Row: {
-          active: boolean | null
-          api_key: string | null
-          created_at: string | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          active?: boolean | null
-          api_key?: string | null
-          created_at?: string | null
-          id?: string
-          user_id: string
-        }
-        Update: {
-          active?: boolean | null
-          api_key?: string | null
-          created_at?: string | null
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_keys_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       contacts: {
         Row: {
           avatar_url: string | null
@@ -98,80 +66,6 @@ export type Database = {
         }
         Relationships: []
       }
-      enrichment_requests: {
-        Row: {
-          credits_used: number | null
-          email_queried: string | null
-          id: string
-          result_id: string | null
-          status: string | null
-          timestamp: string | null
-          user_id: string
-        }
-        Insert: {
-          credits_used?: number | null
-          email_queried?: string | null
-          id?: string
-          result_id?: string | null
-          status?: string | null
-          timestamp?: string | null
-          user_id: string
-        }
-        Update: {
-          credits_used?: number | null
-          email_queried?: string | null
-          id?: string
-          result_id?: string | null
-          status?: string | null
-          timestamp?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "enrichment_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      enrichment_results: {
-        Row: {
-          company: string | null
-          email: string | null
-          full_name: string | null
-          id: string
-          job_title: string | null
-          last_updated: string | null
-          linkedin_url: string | null
-          location: string | null
-          twitter_url: string | null
-        }
-        Insert: {
-          company?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_updated?: string | null
-          linkedin_url?: string | null
-          location?: string | null
-          twitter_url?: string | null
-        }
-        Update: {
-          company?: string | null
-          email?: string | null
-          full_name?: string | null
-          id?: string
-          job_title?: string | null
-          last_updated?: string | null
-          linkedin_url?: string | null
-          location?: string | null
-          twitter_url?: string | null
-        }
-        Relationships: []
-      }
       lookup_history: {
         Row: {
           contact_id: string | null
@@ -203,30 +97,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      plans: {
-        Row: {
-          id: string
-          monthly_credits: number | null
-          monthly_price: number | null
-          name: string
-          overage_price: number | null
-        }
-        Insert: {
-          id?: string
-          monthly_credits?: number | null
-          monthly_price?: number | null
-          name: string
-          overage_price?: number | null
-        }
-        Update: {
-          id?: string
-          monthly_credits?: number | null
-          monthly_price?: number | null
-          name?: string
-          overage_price?: number | null
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -278,76 +148,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      user_roles: {
-        Row: {
-          assigned_at: string | null
-          id: string
-          role: string | null
-          user_id: string
-        }
-        Insert: {
-          assigned_at?: string | null
-          id?: string
-          role?: string | null
-          user_id: string
-        }
-        Update: {
-          assigned_at?: string | null
-          id?: string
-          role?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_role_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      users: {
-        Row: {
-          company: string | null
-          created_at: string | null
-          credits_remaining: number | null
-          email: string | null
-          id: string
-          name: string
-          password_hash: string | null
-          plan_id: string | null
-        }
-        Insert: {
-          company?: string | null
-          created_at?: string | null
-          credits_remaining?: number | null
-          email?: string | null
-          id?: string
-          name: string
-          password_hash?: string | null
-          plan_id?: string | null
-        }
-        Update: {
-          company?: string | null
-          created_at?: string | null
-          credits_remaining?: number | null
-          email?: string | null
-          id?: string
-          name?: string
-          password_hash?: string | null
-          plan_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
