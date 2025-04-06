@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +6,7 @@ import LookupTab from '../components/dashboard/LookupTab';
 import ProjectSearchTab from '../components/dashboard/ProjectSearchTab';
 import HistoryTab from '../components/dashboard/HistoryTab';
 import { useLanguage } from '../contexts/LanguageContext';
+import TodoList from '../components/TodoList';
 
 interface HistoryItem extends ContactResult {
   timestamp: string;
@@ -19,7 +19,6 @@ const Dashboard = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
-    // Check if there's an email in the URL params
     const params = new URLSearchParams(location.search);
     const emailParam = params.get('email');
     
@@ -29,7 +28,6 @@ const Dashboard = () => {
   }, [location.search]);
 
   const handleResultFound = (result: ContactResult) => {
-    // Add to history
     const historyItem: HistoryItem = {
       ...result,
       timestamp: new Date().toISOString()
@@ -39,8 +37,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-6">{t('dashboard.welcome')}</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      
+      <TodoList />
       
       <Tabs defaultValue="lookup" className="w-full">
         <TabsList className="mb-4">
