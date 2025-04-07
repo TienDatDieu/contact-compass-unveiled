@@ -32,7 +32,7 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       .from('contacts')
       .select('*')
       .eq('email', email)
-      .single();
+      .maybeSingle();  // Use maybeSingle instead of single to avoid errors
     
     if (!error && existingContact) {
       console.log("Contact found in database:", existingContact);
@@ -127,54 +127,8 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
         confidence_score: confidenceScore
       };
       
-      // Save to database if user is logged in (not a guest)
-      if (!isGuest) {
-        try {
-          console.log("Saving contact to database");
-          const { data: contactData, error } = await supabase
-            .from('contacts')
-            .upsert({
-              email,
-              full_name: `${result.name.first} ${result.name.last}`.trim(),
-              company: result.company?.name || '',
-              position: result.company?.position || '',
-              linkedin_url: result.social?.linkedin || null,
-              twitter_url: result.social?.twitter || null,
-              github_url: result.social?.other || null,
-              avatar_url: result.avatar || null,
-              phone: result.phone || null,
-              location: result.location || null,
-              confidence_score: result.confidence_score || 50,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'email' })
-            .select('id');
-          
-          if (error) {
-            console.error("Error saving contact to database:", error);
-          } else {
-            console.log("Contact saved to database:", contactData);
-          }
-            
-          // Log the lookup if we're authenticated
-          if (contactData && contactData[0]?.id) {
-            try {
-              const { data: sessionData } = await supabase.auth.getSession();
-              if (sessionData.session?.user) {
-                await supabase.rpc('log_contact_lookup', {
-                  p_user_id: sessionData.session.user.id,
-                  p_email: email,
-                  p_contact_id: contactData[0].id
-                });
-              }
-            } catch (err) {
-              console.error('Error logging lookup:', err);
-            }
-          }
-        } catch (err) {
-          console.error('Error saving contact:', err);
-        }
-      }
-      
+      // Return the result without trying to save to database
+      // This avoids RLS policy errors while still providing search results
       return result;
     }
     

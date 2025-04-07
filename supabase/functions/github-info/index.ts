@@ -28,6 +28,7 @@ async function parseSearchResults(html: string, email: string): Promise<any> {
   
   // Get the first GitHub profile URL
   const githubUrl = githubMatches[0];
+  console.log("Found GitHub URL:", githubUrl);
   const username = extractGitHubUsername(githubUrl);
   
   if (!username) {
@@ -47,6 +48,18 @@ async function parseSearchResults(html: string, email: string): Promise<any> {
     
     const profileData = await response.json();
     
+    // With the GitHub profile data, try to search for LinkedIn profile
+    let linkedinUrl = null;
+    if (profileData.name) {
+      linkedinUrl = await searchLinkedInProfile(profileData.name);
+    }
+    
+    // Try to find Twitter profile
+    let twitterUrl = null;
+    if (profileData.name) {
+      twitterUrl = await searchTwitterProfile(profileData.name);
+    }
+    
     return {
       name: profileData.name || username,
       company: profileData.company || "",
@@ -54,9 +67,93 @@ async function parseSearchResults(html: string, email: string): Promise<any> {
       avatar_url: profileData.avatar_url,
       location: profileData.location || "",
       bio: profileData.bio || "",
+      linkedin_url: linkedinUrl,
+      twitter_url: twitterUrl
     };
   } catch (error) {
     console.error("Error fetching GitHub profile:", error);
+    return null;
+  }
+}
+
+// Search for LinkedIn profile using full name
+async function searchLinkedInProfile(fullName: string): Promise<string | null> {
+  try {
+    console.log("Searching LinkedIn for:", fullName);
+    
+    const searchEngine = Deno.env.get("GOOGLE_API") ? "google" : "bing";
+    const searchUrl = searchEngine === "google"
+      ? `https://www.google.com/search?q=${encodeURIComponent(fullName + " linkedin")}`
+      : `https://www.bing.com/search?q=${encodeURIComponent(fullName + " linkedin")}`;
+    
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error("LinkedIn search request failed:", response.status);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Extract LinkedIn URLs
+    const linkedinRegex = /https:\/\/.*?linkedin\.com\/in\/[a-zA-Z0-9_-]+/g;
+    const matches = html.match(linkedinRegex);
+    
+    if (!matches || matches.length === 0) {
+      console.log("No LinkedIn profiles found");
+      return null;
+    }
+    
+    console.log(`Found ${matches.length} LinkedIn profiles, using first match:`, matches[0]);
+    return matches[0];
+    
+  } catch (error) {
+    console.error("LinkedIn search error:", error);
+    return null;
+  }
+}
+
+// Search for Twitter profile using full name
+async function searchTwitterProfile(fullName: string): Promise<string | null> {
+  try {
+    console.log("Searching Twitter for:", fullName);
+    
+    const searchEngine = Deno.env.get("GOOGLE_API") ? "google" : "bing";
+    const searchUrl = searchEngine === "google"
+      ? `https://www.google.com/search?q=${encodeURIComponent(fullName + " twitter")}`
+      : `https://www.bing.com/search?q=${encodeURIComponent(fullName + " twitter")}`;
+    
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error("Twitter search request failed:", response.status);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Extract Twitter URLs (supports both twitter.com and x.com)
+    const twitterRegex = /https:\/\/(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+/g;
+    const matches = html.match(twitterRegex);
+    
+    if (!matches || matches.length === 0) {
+      console.log("No Twitter profiles found");
+      return null;
+    }
+    
+    console.log(`Found ${matches.length} Twitter profiles, using first match:`, matches[0]);
+    return matches[0];
+    
+  } catch (error) {
+    console.error("Twitter search error:", error);
     return null;
   }
 }
@@ -66,8 +163,14 @@ async function performWebSearch(email: string): Promise<any> {
   try {
     console.log("Performing web search for:", `${email} github`);
     
-    // Using Bing search
-    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(email + " github")}`;
+    // Determine which search engine to use based on environment variables
+    const searchEngine = Deno.env.get("GOOGLE_API") ? "google" : "bing";
+    console.log(`Using search engine: ${searchEngine}`);
+    
+    const searchUrl = searchEngine === "google"
+      ? `https://www.google.com/search?q=${encodeURIComponent(email + " github")}`
+      : `https://www.bing.com/search?q=${encodeURIComponent(email + " github")}`;
+    
     const response = await fetch(searchUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
