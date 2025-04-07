@@ -76,15 +76,20 @@ async function parseSearchResults(html: string, email: string): Promise<any> {
   }
 }
 
-// Search for LinkedIn profile using full name
+// Improved LinkedIn profile search using full name
 async function searchLinkedInProfile(fullName: string): Promise<string | null> {
   try {
     console.log("Searching LinkedIn for:", fullName);
     
+    // Create a more specific search query by adding "linkedin profile"
     const searchEngine = Deno.env.get("GOOGLE_API") ? "google" : "bing";
+    const searchQuery = `${encodeURIComponent(fullName)} linkedin profile`;
+    
     const searchUrl = searchEngine === "google"
-      ? `https://www.google.com/search?q=${encodeURIComponent(fullName + " linkedin")}`
-      : `https://www.bing.com/search?q=${encodeURIComponent(fullName + " linkedin")}`;
+      ? `https://www.google.com/search?q=${searchQuery}`
+      : `https://www.bing.com/search?q=${searchQuery}`;
+    
+    console.log("Search URL:", searchUrl);
     
     const response = await fetch(searchUrl, {
       headers: {
@@ -99,8 +104,9 @@ async function searchLinkedInProfile(fullName: string): Promise<string | null> {
     
     const html = await response.text();
     
-    // Extract LinkedIn URLs
-    const linkedinRegex = /https:\/\/.*?linkedin\.com\/in\/[a-zA-Z0-9_-]+/g;
+    // Extract LinkedIn URLs with improved regex to avoid partial matches
+    // This pattern matches https://linkedin.com/in/ or https://www.linkedin.com/in/ followed by alphanumeric profile ID
+    const linkedinRegex = /https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+(?:\/)?/g;
     const matches = html.match(linkedinRegex);
     
     if (!matches || matches.length === 0) {
@@ -108,8 +114,16 @@ async function searchLinkedInProfile(fullName: string): Promise<string | null> {
       return null;
     }
     
-    console.log(`Found ${matches.length} LinkedIn profiles, using first match:`, matches[0]);
-    return matches[0];
+    // Clean up the URL to make sure it's a valid LinkedIn profile
+    let linkedinUrl = matches[0];
+    
+    // Remove any trailing slashes for consistency
+    if (linkedinUrl.endsWith('/')) {
+      linkedinUrl = linkedinUrl.slice(0, -1);
+    }
+    
+    console.log(`Found LinkedIn profile: ${linkedinUrl}`);
+    return linkedinUrl;
     
   } catch (error) {
     console.error("LinkedIn search error:", error);
@@ -123,9 +137,11 @@ async function searchTwitterProfile(fullName: string): Promise<string | null> {
     console.log("Searching Twitter for:", fullName);
     
     const searchEngine = Deno.env.get("GOOGLE_API") ? "google" : "bing";
+    const searchQuery = `${encodeURIComponent(fullName)} twitter`;
+    
     const searchUrl = searchEngine === "google"
-      ? `https://www.google.com/search?q=${encodeURIComponent(fullName + " twitter")}`
-      : `https://www.bing.com/search?q=${encodeURIComponent(fullName + " twitter")}`;
+      ? `https://www.google.com/search?q=${searchQuery}`
+      : `https://www.bing.com/search?q=${searchQuery}`;
     
     const response = await fetch(searchUrl, {
       headers: {

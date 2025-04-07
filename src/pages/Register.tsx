@@ -50,10 +50,16 @@ const Register = () => {
         description: `Welcome to Contact Compass, ${name}!`,
       });
       
-      // Navigate to login after successful registration
-      navigate('/login');
+      // Wait briefly to let any redirects from auth state changes happen
+      setTimeout(() => {
+        if (!user) {
+          // If not automatically redirected (e.g., email confirmation required)
+          navigate('/login');
+        }
+      }, 1000);
     } catch (error) {
       // Error is already handled in the auth context
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }

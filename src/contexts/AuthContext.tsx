@@ -108,7 +108,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
+      // Fixed registration by ensuring we properly send the metadata
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -120,10 +121,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      toast({
-        title: 'Registration successful',
-        description: 'Check your email to confirm your account.',
-      });
+      // If signup is successful but email confirmation is required
+      if (data.user && !data.session) {
+        toast({
+          title: 'Registration successful',
+          description: 'Please check your email to confirm your account.',
+        });
+      } else {
+        toast({
+          title: 'Registration successful',
+          description: 'Your account has been created and you are now logged in.',
+        });
+      }
+      
+      return;
     } catch (error: any) {
       toast({
         title: 'Registration failed',
