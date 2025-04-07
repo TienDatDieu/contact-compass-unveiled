@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://nwccehzvwieeritmqkso.supabase.co';
@@ -30,12 +29,10 @@ export async function searchContactByEmail(email: string) {
       .from('contacts')
       .select('*')
       .eq('email', email)
-      .single();
+      .maybeSingle();  // Using maybeSingle instead of single to avoid error when not found
     
     if (contactError) {
-      if (contactError.code !== 'PGRST116') { // Not found error
-        console.error('Error searching contact:', contactError);
-      }
+      console.error('Error searching contact:', contactError);
       return null;
     }
     

@@ -25,6 +25,8 @@ export interface ContactResult {
 
 export async function lookupEmail(email: string, isGuest: boolean = false): Promise<ContactResult | null> {
   try {
+    console.log("Looking up email:", email);
+    
     // For guests or authenticated users, first check the database
     const { data: existingContact, error } = await supabase
       .from('contacts')
@@ -33,6 +35,8 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       .single();
     
     if (!error && existingContact) {
+      console.log("Contact found in database:", existingContact);
+      
       // Contact exists in database, return formatted result
       const fullName = existingContact.full_name || `${existingContact.first_name || ''} ${existingContact.last_name || ''}`.trim();
       const nameParts = fullName.split(' ');
@@ -61,6 +65,8 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       };
     }
     
+    console.log("Contact not found in database, searching online...");
+    
     // If not in database, try to fetch from GitHub info
     let githubData = null;
     try {
@@ -68,6 +74,7 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       const { data: authData } = await supabase.auth.getSession();
       const authToken = authData?.session?.access_token || '';
       
+      console.log("Calling GitHub info edge function");
       const response = await fetch(`https://nwccehzvwieeritmqkso.supabase.co/functions/v1/github-info`, {
         method: 'POST',
         headers: { 
@@ -79,6 +86,8 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       
       if (response.ok) {
         const data = await response.json();
+        console.log("GitHub info response:", data);
+        
         if (data.success) {
           githubData = data.data;
         }
@@ -87,14 +96,17 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       console.error('Error fetching GitHub info:', err);
     }
     
-    // If we got GitHub data, return it
+    // If we got GitHub data, prepare result
     if (githubData) {
       const displayName = githubData.name || email.split('@')[0];
       const nameParts = displayName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      const mockData: ContactResult = {
+      // Build result with confidence score based on data source
+      const confidenceScore = githubData.source === "fallback" ? 50 : 75;
+      
+      const result: ContactResult = {
         name: {
           first: firstName,
           last: lastName
@@ -102,39 +114,46 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
         email,
         company: {
           name: githubData.company || '',
-          position: 'Software Developer'
+          position: 'Software Developer' // Default assumption for GitHub users
         },
-        phone: '+1 (555) 123-4567',
-        location: 'Unknown',
+        phone: '', // We don't have this info
+        location: githubData.location || '',
         social: {
-          linkedin: githubData.linkedin_url,
-          twitter: githubData.twitter_url,
-          other: githubData.github_url
+          linkedin: githubData.linkedin_url || '',
+          twitter: githubData.twitter_url || '',
+          other: githubData.github_url || ''
         },
         avatar: githubData.avatar_url,
-        confidence_score: 70
+        confidence_score: confidenceScore
       };
       
       // Save to database if user is logged in (not a guest)
       if (!isGuest) {
         try {
-          const { data: contactData } = await supabase
+          console.log("Saving contact to database");
+          const { data: contactData, error } = await supabase
             .from('contacts')
             .upsert({
               email,
-              full_name: `${mockData.name.first} ${mockData.name.last}`.trim(),
-              company: mockData.company.name,
-              position: mockData.company.position,
-              linkedin_url: mockData.social?.linkedin,
-              twitter_url: mockData.social?.twitter,
-              github_url: mockData.social?.other,
-              avatar_url: mockData.avatar,
-              phone: mockData.phone,
-              location: mockData.location,
-              confidence_score: mockData.confidence_score,
-              updated_at: new Date()
+              full_name: `${result.name.first} ${result.name.last}`.trim(),
+              company: result.company?.name || '',
+              position: result.company?.position || '',
+              linkedin_url: result.social?.linkedin || null,
+              twitter_url: result.social?.twitter || null,
+              github_url: result.social?.other || null,
+              avatar_url: result.avatar || null,
+              phone: result.phone || null,
+              location: result.location || null,
+              confidence_score: result.confidence_score || 50,
+              updated_at: new Date().toISOString()
             }, { onConflict: 'email' })
             .select('id');
+          
+          if (error) {
+            console.error("Error saving contact to database:", error);
+          } else {
+            console.log("Contact saved to database:", contactData);
+          }
             
           // Log the lookup if we're authenticated
           if (contactData && contactData[0]?.id) {
@@ -156,10 +175,11 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
         }
       }
       
-      return mockData;
+      return result;
     }
     
     // No results found
+    console.log("No data found for email:", email);
     return null;
     
   } catch (error) {

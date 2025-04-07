@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { lookupEmail } from '../../services/lookupService';
 import { useAuth } from '../../contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SearchX } from 'lucide-react';
 
 interface LookupTabProps {
   onResultFound: (result: ContactResult) => void;
@@ -20,10 +22,12 @@ const LookupTab = ({ onResultFound }: LookupTabProps) => {
   
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<ContactResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleSearch = async (email: string) => {
     setIsSearching(true);
     setResult(null);
+    setSearchError(null);
     
     try {
       const contactData = await lookupEmail(email, isGuest);
@@ -34,7 +38,30 @@ const LookupTab = ({ onResultFound }: LookupTabProps) => {
         if (user && !isGuest) {
           onResultFound(contactData);
         }
+        
+        // Show toast with source info
+        const confidenceScore = contactData.confidence_score || 0;
+        if (confidenceScore >= 75) {
+          toast({
+            title: 'Search completed',
+            description: 'Found high confidence results for this email',
+            variant: 'default',
+          });
+        } else if (confidenceScore >= 50) {
+          toast({
+            title: 'Search completed',
+            description: 'Found results with medium confidence - some information may be approximate',
+            variant: 'default',
+          });
+        } else {
+          toast({
+            title: 'Limited results found',
+            description: 'Could only find basic information for this email',
+            variant: 'default',
+          });
+        }
       } else {
+        setSearchError('No results found for this email address.');
         toast({
           title: t('lookup.noResults'),
           description: t('lookup.tryDifferentEmail'),
@@ -43,6 +70,7 @@ const LookupTab = ({ onResultFound }: LookupTabProps) => {
       }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchError('An error occurred while searching. Please try again.');
       toast({
         title: t('lookup.error'),
         description: t('lookup.errorTryAgain'),
@@ -75,10 +103,21 @@ const LookupTab = ({ onResultFound }: LookupTabProps) => {
       </Card>
       
       {isSearching && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner size="lg" />
-          <span className="ml-3 text-lg">{t('lookup.searching')}</span>
+          <span className="mt-4 text-lg">{t('lookup.searching')}</span>
+          <p className="text-sm text-muted-foreground mt-2">
+            Searching databases and public information...
+          </p>
         </div>
+      )}
+      
+      {searchError && !isSearching && (
+        <Alert variant="destructive">
+          <SearchX className="h-4 w-4" />
+          <AlertTitle>Search failed</AlertTitle>
+          <AlertDescription>{searchError}</AlertDescription>
+        </Alert>
       )}
       
       {result && !isSearching && (
