@@ -3,13 +3,14 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import bcrypt from 'bcryptjs';
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, company?: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isGuest: boolean;
@@ -94,8 +95,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const signIn = async (email: string, password: string) => {
     try {
+      // First try to get the user by email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, hashed_password, full_name')
+        .eq('id', (await supabase.from('auth').select('users.id').eq('email', email).single()).data?.id)
+        .maybeSingle();
+      
+      if (profileError || !profileData) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // Check password
+      const passwordMatch = await bcrypt.compare(password, profileData.hashed_password || '');
+      if (!passwordMatch) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // If password matches, sign in with Supabase
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      
+      toast({
+        title: 'Login successful',
+        description: `Welcome back, ${profileData.full_name || 'User'}!`,
+      });
     } catch (error: any) {
       toast({
         title: 'Login failed',
@@ -106,20 +130,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, company?: string) => {
     try {
-      // Fixed registration by ensuring we properly send the metadata
+      // First register the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
           data: {
             full_name: fullName,
+            company: company || null
           }
         }
       });
       
       if (error) throw error;
+      
+      // Hash the password for storing in our profiles table
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // If user was created successfully, update the profile with the hashed password
+      if (data.user) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            hashed_password: hashedPassword,
+            company: company || null 
+          })
+          .eq('id', data.user.id);
+        
+        if (updateError) {
+          console.error("Error updating profile:", updateError);
+          // Don't throw here as the user is already created
+        }
+      }
       
       // If signup is successful but email confirmation is required
       if (data.user && !data.session) {

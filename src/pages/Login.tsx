@@ -33,13 +33,10 @@ const Login = () => {
     
     try {
       await signIn(email, password);
-      toast({
-        title: 'Login successful',
-        description: 'Welcome back!',
-      });
       navigate('/dashboard');
     } catch (error) {
       // Error is already handled in the auth context
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }

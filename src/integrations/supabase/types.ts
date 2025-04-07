@@ -103,6 +103,7 @@ export type Database = {
           company: string | null
           created_at: string
           full_name: string | null
+          hashed_password: string | null
           id: string
           is_admin: boolean | null
           updated_at: string
@@ -111,6 +112,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           full_name?: string | null
+          hashed_password?: string | null
           id: string
           is_admin?: boolean | null
           updated_at?: string
@@ -119,6 +121,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           full_name?: string | null
+          hashed_password?: string | null
           id?: string
           is_admin?: boolean | null
           updated_at?: string

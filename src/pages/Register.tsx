@@ -17,6 +17,7 @@ const Register = () => {
   const { signUp, user } = useAuth();
   
   const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,7 +45,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      await signUp(email, password, name);
+      await signUp(email, password, name, company);
       toast({
         title: t('register.success'),
         description: `Welcome to Contact Compass, ${name}!`,
@@ -83,6 +84,17 @@ const Register = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company">Company (Optional)</Label>
+              <Input
+                id="company"
+                type="text"
+                placeholder="Acme Inc."
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
                 disabled={isLoading}
               />
             </div>

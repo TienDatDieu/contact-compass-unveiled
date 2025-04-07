@@ -13,6 +13,7 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,12 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading, isGuest } = useAuth();
   
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner size="lg" />
+        <span className="ml-2 text-lg">Loading...</span>
+      </div>
+    );
   }
   
   // Allow access for authenticated users or guests

@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 interface NavbarProps {
   isLoggedIn: boolean;
@@ -16,7 +17,32 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
   const { t } = useLanguage();
   const { user, isGuest } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userName, setUserName] = useState<string>('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && data) {
+            setUserName(data.full_name || '');
+          }
+        } catch (err) {
+          console.error("Error fetching user name:", err);
+        }
+      } else {
+        setUserName('');
+      }
+    };
+    
+    fetchUserName();
+  }, [user]);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -35,6 +61,13 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
               <span className="text-xl font-bold text-gray-800">Compass</span>
             </Link>
           </div>
+          
+          {/* Welcome Message */}
+          {(isLoggedIn || isGuest) && (
+            <div className="hidden md:block text-sm font-medium text-gray-600">
+              Welcome, {isGuest && !user ? 'Guest' : userName || 'User'}
+            </div>
+          )}
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
@@ -90,6 +123,13 @@ const Navbar = ({ isLoggedIn, onLogout }: NavbarProps) => {
             </Button>
           </div>
         </div>
+        
+        {/* Mobile Welcome Message */}
+        {(isLoggedIn || isGuest) && isMenuOpen && (
+          <div className="md:hidden py-2 text-center text-sm font-medium text-gray-600 border-t border-gray-100">
+            Welcome, {isGuest && !user ? 'Guest' : userName || 'User'}
+          </div>
+        )}
         
         {/* Mobile Menu */}
         {isMenuOpen && (
