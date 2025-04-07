@@ -95,31 +95,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const signIn = async (email: string, password: string) => {
     try {
-      // First try to get the user by email
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, hashed_password, full_name')
-        .eq('id', (await supabase.from('auth').select('users.id').eq('email', email).single()).data?.id)
-        .maybeSingle();
-      
-      if (profileError || !profileData) {
-        throw new Error('Invalid email or password');
-      }
-      
-      // Check password
-      const passwordMatch = await bcrypt.compare(password, profileData.hashed_password || '');
-      if (!passwordMatch) {
-        throw new Error('Invalid email or password');
-      }
-      
-      // If password matches, sign in with Supabase
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      
-      toast({
-        title: 'Login successful',
-        description: `Welcome back, ${profileData.full_name || 'User'}!`,
+      // We don't have direct access to auth.users, so we'll use a different approach
+      // First try simple sign-in without additional checks
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
       });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // If login succeeds, get the user's profile details for greeting
+      if (authData.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', authData.user.id)
+          .single();
+        
+        toast({
+          title: 'Login successful',
+          description: `Welcome back, ${profileData?.full_name || 'User'}!`,
+        });
+      }
+      
     } catch (error: any) {
       toast({
         title: 'Login failed',
@@ -155,6 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .from('profiles')
           .update({ 
             hashed_password: hashedPassword,
+            full_name: fullName,
             company: company || null 
           })
           .eq('id', data.user.id);
