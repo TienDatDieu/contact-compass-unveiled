@@ -50,7 +50,7 @@ export const useAuthService = () => {
         }
       }
       
-      return data;
+      return;
     } catch (error: any) {
       console.error("Login process failed:", error);
       toast({
