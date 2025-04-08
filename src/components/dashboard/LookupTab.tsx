@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import LookupForm from '../LookupForm';
@@ -30,7 +29,7 @@ const LookupTab = ({ onResultFound }: LookupTabProps) => {
     setSearchError(null);
     
     try {
-      const contactData = await lookupEmail(email, isGuest);
+      const contactData = await lookupEmail(email);
       
       if (contactData) {
         setResult(contactData);

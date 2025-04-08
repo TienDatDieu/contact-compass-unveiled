@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import LookupForm from '../components/LookupForm';
@@ -73,7 +72,7 @@ const Home = () => {
   
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Simple Hero Section */}
+      {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-r from-blue-600 to-blue-800">
         <div className="container px-4 md:px-6 mx-auto max-w-3xl text-center">
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white mb-6">
@@ -124,7 +123,7 @@ const Home = () => {
         </section>
       )}
 
-      {/* Simple Features Section */}
+      {/* Features Section */}
       <section className="w-full py-12 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="text-center mb-10">
@@ -185,7 +184,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Simple CTA Section */}
+      {/* CTA Section */}
       <section className="w-full py-12 bg-gray-50">
         <div className="container px-4 md:px-6 mx-auto text-center">
           <h2 className="text-2xl font-bold tracking-tight mb-4">

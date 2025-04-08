@@ -40,3 +40,4 @@ enabled = true
 
 [functions.contact-search]
 verify_jwt = false
+
