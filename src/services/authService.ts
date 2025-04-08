@@ -1,6 +1,4 @@
-
 import { supabase } from '@/lib/supabase';
-import bcrypt from 'bcryptjs';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuthService = () => {
@@ -8,31 +6,53 @@ export const useAuthService = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Attempting login with:", email);
+      
       // First try simple sign-in without additional checks
-      const { data: authData, error } = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       });
       
       if (error) {
+        console.error("Sign in error:", error);
         throw error;
       }
       
+      console.log("Login successful, session:", data.session ? "exists" : "missing");
+      
       // If login succeeds, get the user's profile details for greeting
-      if (authData.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', authData.user.id)
-          .single();
-        
-        toast({
-          title: 'Login successful',
-          description: `Welcome back, ${profileData?.full_name || 'User'}!`,
-        });
+      if (data.user) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profileError) {
+            console.error("Error fetching profile after login:", profileError);
+          } else {
+            console.log("Profile fetched successfully:", profileData);
+          }
+          
+          toast({
+            title: 'Login successful',
+            description: `Welcome back, ${profileData?.full_name || 'User'}!`,
+          });
+        } catch (profileFetchError) {
+          console.error("Error in profile fetch process:", profileFetchError);
+          // Still show success toast even if profile fetch fails
+          toast({
+            title: 'Login successful',
+            description: 'Welcome back!',
+          });
+        }
       }
       
+      return data;
     } catch (error: any) {
+      console.error("Login process failed:", error);
       toast({
         title: 'Login failed',
         description: error.message,
@@ -59,14 +79,14 @@ export const useAuthService = () => {
       if (error) throw error;
       
       // Hash the password for storing in our profiles table
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // const hashedPassword = await bcrypt.hash(password, 10);
       
       // If user was created successfully, update the profile with the hashed password
       if (data.user) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
-            hashed_password: hashedPassword,
+            // hashed_password: hashedPassword,
             full_name: fullName,
             company: company || null 
           })
