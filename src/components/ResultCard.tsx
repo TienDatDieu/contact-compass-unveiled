@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, LinkedinIcon, Twitter, Github } from 'lucide-react';
+import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, LinkedIn, Twitter, Github } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -65,6 +65,9 @@ const ResultCard = ({ result }: ResultCardProps) => {
 
   const fullName = `${result.name.first} ${result.name.last}`;
   const initials = `${result.name.first.charAt(0)}${result.name.last.charAt(0)}`;
+
+  // Debug the social links
+  console.log("Social links in ResultCard:", result.social);
 
   return (
     <Card className="w-full overflow-hidden border-gray-200">
@@ -150,7 +153,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
                 {result.social?.linkedin && (
                   <li>
                     <a href={result.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
-                      <LinkedinIcon className="h-4 w-4 mr-2" />
+                      <LinkedIn className="h-4 w-4 mr-2" />
                       LinkedIn
                       <ExternalLink className="h-3 w-3 ml-1" />
                     </a>
