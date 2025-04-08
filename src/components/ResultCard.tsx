@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, LinkedinIcon, Twitter } from 'lucide-react';
+import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, LinkedinIcon, Twitter, Github } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -25,7 +25,7 @@ export interface ContactResult {
   social?: {
     linkedin?: string;
     twitter?: string;
-    other?: string;
+    github?: string;
   };
   avatar?: string;
   confidence_score?: number;
@@ -144,40 +144,38 @@ const ResultCard = ({ result }: ResultCardProps) => {
           </div>
 
           <div className="space-y-4">
-            {(result.social?.linkedin || result.social?.twitter || result.social?.other) && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('results.socialProfiles')}</h3>
-                <ul className="space-y-3">
-                  {result.social?.linkedin && (
-                    <li>
-                      <a href={result.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
-                        <LinkedinIcon className="h-4 w-4 mr-2" />
-                        LinkedIn
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </li>
-                  )}
-                  {result.social?.twitter && (
-                    <li>
-                      <a href={result.social.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
-                        <Twitter className="h-4 w-4 mr-2" />
-                        Twitter
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </li>
-                  )}
-                  {result.social?.other && (
-                    <li>
-                      <a href={result.social.other} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
-                        <Globe className="h-4 w-4 mr-2" />
-                        {new URL(result.social.other).hostname.replace('www.', '')}
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            )}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('results.socialProfiles')}</h3>
+              <ul className="space-y-3">
+                {result.social?.linkedin && (
+                  <li>
+                    <a href={result.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                      <LinkedinIcon className="h-4 w-4 mr-2" />
+                      LinkedIn
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                  </li>
+                )}
+                {result.social?.twitter && (
+                  <li>
+                    <a href={result.social.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                      <Twitter className="h-4 w-4 mr-2" />
+                      Twitter
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                  </li>
+                )}
+                {result.social?.github && (
+                  <li>
+                    <a href={result.social.github} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                      <Github className="h-4 w-4 mr-2" />
+                      GitHub
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
         </div>
 

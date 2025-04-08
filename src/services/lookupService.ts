@@ -17,7 +17,7 @@ export interface ContactResult {
   social?: {
     linkedin?: string;
     twitter?: string;
-    other?: string;
+    github?: string;
   };
   avatar?: string;
   confidence_score?: number;
@@ -27,47 +27,11 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
   try {
     console.log("Looking up email:", email);
     
-    // First check if the contact exists in the database
-    const { data: existingContact, error } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-    
-    if (!error && existingContact) {
-      console.log("Contact found in database:", existingContact);
-      
-      // Format the existing contact data
-      const fullName = existingContact.full_name || `${existingContact.first_name || ''} ${existingContact.last_name || ''}`.trim();
-      const nameParts = fullName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      return {
-        name: {
-          first: firstName,
-          last: lastName
-        },
-        email: existingContact.email,
-        company: {
-          name: existingContact.company || '',
-          position: existingContact.position
-        },
-        phone: existingContact.phone,
-        location: existingContact.location,
-        social: {
-          linkedin: existingContact.linkedin_url,
-          twitter: existingContact.twitter_url,
-          other: existingContact.github_url
-        },
-        avatar: existingContact.avatar_url,
-        confidence_score: existingContact.confidence_score
-      };
-    }
-    
-    console.log("Contact not found in database, calling edge function to search online...");
-    
-    // If not in database, call our contact-search edge function
+    // Call our contact-search edge function which handles everything:
+    // 1. Checks if contact exists in database
+    // 2. If not, searches for GitHub/LinkedIn/Twitter profiles
+    // 3. Saves contact data to database
+    // 4. Returns the contact data
     const response = await supabase.functions.invoke('contact-search', {
       body: { email }
     });
@@ -95,7 +59,7 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
         social: {
           linkedin: contactData.linkedin_url,
           twitter: contactData.twitter_url,
-          other: contactData.github_url
+          github: contactData.github_url
         },
         avatar: contactData.avatar_url,
         confidence_score: contactData.confidence_score

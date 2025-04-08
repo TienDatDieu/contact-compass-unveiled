@@ -58,10 +58,13 @@ async function extractGitHubUsername(email: string): Promise<any> {
     
     const profileData = await githubApiResponse.json();
     
+    const fullName = profileData.name || username;
+    
     return {
-      name: profileData.name || username,
+      name: fullName,
       github_url: profileData.html_url,
-      linkedin_url: await findLinkedInProfile(profileData.name || username)
+      linkedin_url: await findLinkedInProfile(fullName),
+      twitter_url: await findTwitterProfile(fullName)
     };
   } catch (error) {
     console.error("Error searching GitHub:", error);
@@ -105,28 +108,98 @@ async function findLinkedInProfile(fullName: string): Promise<string | null> {
   }
 }
 
+async function findTwitterProfile(fullName: string): Promise<string | null> {
+  if (!fullName) return null;
+  
+  try {
+    console.log("Searching Twitter for:", fullName);
+    const searchQuery = `${encodeURIComponent(fullName)} twitter`;
+    const searchUrl = `https://www.bing.com/search?q=${searchQuery}`;
+    
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error("Twitter search request failed:", response.status);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Extract Twitter URLs (supports both twitter.com and x.com)
+    const twitterRegex = /https:\/\/(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+/g;
+    const matches = html.match(twitterRegex);
+    
+    if (!matches || matches.length === 0) {
+      console.log("No Twitter profiles found");
+      return null;
+    }
+    
+    return matches[0];
+  } catch (error) {
+    console.error("Twitter search error:", error);
+    return null;
+  }
+}
+
 async function saveContactToDatabase(supabaseClient: any, email: string, contactData: any): Promise<any> {
   try {
     console.log("Saving contact to database:", email);
     
-    const { data, error } = await supabaseClient
-      .from('contacts')
-      .insert({
-        email: email,
-        full_name: contactData.name,
-        github_url: contactData.github_url,
-        linkedin_url: contactData.linkedin_url,
-        confidence_score: 50 // Medium confidence for external searches
-      })
-      .select()
-      .single();
+    // Format the data for insertion
+    const insertData = {
+      email: email,
+      full_name: contactData.name,
+      github_url: contactData.github_url,
+      linkedin_url: contactData.linkedin_url,
+      twitter_url: contactData.twitter_url,
+      confidence_score: 50 // Medium confidence for external searches
+    };
     
-    if (error) {
-      console.error("Error saving contact to database:", error);
-      return null;
+    // Check if the contact already exists
+    const { data: existingContact } = await supabaseClient
+      .from('contacts')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    
+    let result;
+    
+    if (existingContact) {
+      // Update existing contact
+      const { data, error } = await supabaseClient
+        .from('contacts')
+        .update(insertData)
+        .eq('id', existingContact.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error updating contact:", error);
+        return null;
+      }
+      
+      result = data;
+    } else {
+      // Insert new contact
+      const { data, error } = await supabaseClient
+        .from('contacts')
+        .insert(insertData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error inserting contact:", error);
+        return null;
+      }
+      
+      result = data;
     }
     
-    return data;
+    return result;
   } catch (error) {
     console.error("Error in database operation:", error);
     return null;
@@ -170,7 +243,7 @@ serve(async (req) => {
       );
     }
     
-    // If not in database, search for GitHub and LinkedIn profiles
+    // If not in database, search for GitHub and social profiles
     const contactInfo = await extractGitHubUsername(email);
     
     if (contactInfo) {
@@ -190,9 +263,10 @@ serve(async (req) => {
     // Fallback: create a minimal record if no data was found
     const username = email.split('@')[0];
     const fallbackData = {
-      name: username,
+      name: username.charAt(0).toUpperCase() + username.slice(1),
       github_url: null,
-      linkedin_url: null
+      linkedin_url: null,
+      twitter_url: null
     };
     
     const fallbackContact = await saveContactToDatabase(supabaseAdmin, email, fallbackData);
