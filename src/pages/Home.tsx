@@ -1,16 +1,74 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import LookupForm from '../components/LookupForm';
 import { useLanguage } from '../contexts/LanguageContext';
+import ResultCard, { ContactResult } from '../components/ResultCard';
+import { lookupEmail } from '../services/lookupService';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SearchX } from 'lucide-react';
 
 const Home = () => {
-  const navigate = useNavigate();
   const { t } = useLanguage();
+  const { toast } = useToast();
   
-  const handleSearch = (email: string) => {
-    navigate(`/dashboard?email=${email}`);
+  const [isSearching, setIsSearching] = useState(false);
+  const [result, setResult] = useState<ContactResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  
+  const handleSearch = async (email: string) => {
+    setIsSearching(true);
+    setResult(null);
+    setSearchError(null);
+    
+    try {
+      const contactData = await lookupEmail(email);
+      
+      if (contactData) {
+        setResult(contactData);
+        
+        // Show toast with source info
+        const confidenceScore = contactData.confidence_score || 0;
+        if (confidenceScore >= 75) {
+          toast({
+            title: 'Search completed',
+            description: 'Found high confidence results for this email',
+            variant: 'default',
+          });
+        } else if (confidenceScore >= 50) {
+          toast({
+            title: 'Search completed',
+            description: 'Found results with medium confidence - some information may be approximate',
+            variant: 'default',
+          });
+        } else {
+          toast({
+            title: 'Limited results found',
+            description: 'Could only find basic information for this email',
+            variant: 'default',
+          });
+        }
+      } else {
+        setSearchError('No results found for this email address.');
+        toast({
+          title: t('lookup.noResults'),
+          description: t('lookup.tryDifferentEmail'),
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('An error occurred while searching. Please try again.');
+      toast({
+        title: t('lookup.error'),
+        description: t('lookup.errorTryAgain'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
   
   return (
@@ -30,13 +88,44 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               {t('lookup.title')}
             </h2>
-            <LookupForm onSubmit={handleSearch} />
+            <LookupForm onSubmit={handleSearch} isProcessing={isSearching} />
           </div>
         </div>
       </section>
 
+      {/* Search Results Section */}
+      {(isSearching || result || searchError) && (
+        <section className="w-full py-12 bg-gray-50">
+          <div className="container px-4 md:px-6 mx-auto">
+            {isSearching && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <LoadingSpinner size="lg" />
+                <span className="mt-4 text-lg">{t('lookup.searching')}</span>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Searching databases and public information...
+                </p>
+              </div>
+            )}
+            
+            {searchError && !isSearching && (
+              <Alert variant="destructive">
+                <SearchX className="h-4 w-4" />
+                <AlertTitle>Search failed</AlertTitle>
+                <AlertDescription>{searchError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {result && !isSearching && (
+              <div className="mt-4">
+                <ResultCard result={result} />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Simple Features Section */}
-      <section className="w-full py-12 bg-gray-50">
+      <section className="w-full py-12 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold tracking-tight">
@@ -97,7 +186,7 @@ const Home = () => {
       </section>
 
       {/* Simple CTA Section */}
-      <section className="w-full py-12 bg-white">
+      <section className="w-full py-12 bg-gray-50">
         <div className="container px-4 md:px-6 mx-auto text-center">
           <h2 className="text-2xl font-bold tracking-tight mb-4">
             {t('home.cta.title')}

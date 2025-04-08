@@ -23,21 +23,21 @@ export interface ContactResult {
   confidence_score?: number;
 }
 
-export async function lookupEmail(email: string, isGuest: boolean = false): Promise<ContactResult | null> {
+export async function lookupEmail(email: string): Promise<ContactResult | null> {
   try {
     console.log("Looking up email:", email);
     
-    // For guests or authenticated users, first check the database
+    // First check if the contact exists in the database
     const { data: existingContact, error } = await supabase
       .from('contacts')
       .select('*')
       .eq('email', email)
-      .maybeSingle();  // Use maybeSingle instead of single to avoid errors
+      .maybeSingle();
     
     if (!error && existingContact) {
       console.log("Contact found in database:", existingContact);
       
-      // Contact exists in database, return formatted result
+      // Format the existing contact data
       const fullName = existingContact.full_name || `${existingContact.first_name || ''} ${existingContact.last_name || ''}`.trim();
       const nameParts = fullName.split(' ');
       const firstName = nameParts[0] || '';
@@ -65,71 +65,41 @@ export async function lookupEmail(email: string, isGuest: boolean = false): Prom
       };
     }
     
-    console.log("Contact not found in database, searching online...");
+    console.log("Contact not found in database, calling edge function to search online...");
     
-    // If not in database, try to fetch from GitHub info
-    let githubData = null;
-    try {
-      // Get the user's session token for authorization
-      const { data: authData } = await supabase.auth.getSession();
-      const authToken = authData?.session?.access_token || '';
-      
-      console.log("Calling GitHub info edge function");
-      const response = await fetch(`https://nwccehzvwieeritmqkso.supabase.co/functions/v1/github-info`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ email })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("GitHub info response:", data);
-        
-        if (data.success) {
-          githubData = data.data;
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching GitHub info:', err);
-    }
+    // If not in database, call our contact-search edge function
+    const response = await supabase.functions.invoke('contact-search', {
+      body: { email }
+    });
     
-    // If we got GitHub data, prepare result
-    if (githubData) {
-      const displayName = githubData.name || email.split('@')[0];
-      const nameParts = displayName.split(' ');
+    console.log("Edge function response:", response);
+    
+    if (response.data && response.data.success) {
+      const contactData = response.data.data;
+      
+      // Format the contact data from the edge function
+      const fullName = contactData.full_name || '';
+      const nameParts = fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Build result with confidence score based on data source
-      const confidenceScore = githubData.source === "fallback" ? 50 : 75;
-      
-      const result: ContactResult = {
+      return {
         name: {
           first: firstName,
           last: lastName
         },
-        email,
+        email: contactData.email,
         company: {
-          name: githubData.company || '',
-          position: 'Software Developer' // Default assumption for GitHub users
+          name: contactData.company || '',
         },
-        phone: '', // We don't have this info
-        location: githubData.location || '',
         social: {
-          linkedin: githubData.linkedin_url || '',
-          twitter: githubData.twitter_url || '',
-          other: githubData.github_url || ''
+          linkedin: contactData.linkedin_url,
+          twitter: contactData.twitter_url,
+          other: contactData.github_url
         },
-        avatar: githubData.avatar_url,
-        confidence_score: confidenceScore
+        avatar: contactData.avatar_url,
+        confidence_score: contactData.confidence_score
       };
-      
-      // Return the result without trying to save to database
-      // This avoids RLS policy errors while still providing search results
-      return result;
     }
     
     // No results found
