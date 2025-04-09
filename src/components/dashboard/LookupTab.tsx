@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import LookupForm from '../LookupForm';
-import ResultCard, { ContactResult } from '../ResultCard';
+import ResultCard from '../ResultCard';
 import LoadingSpinner from '../LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { lookupEmail } from '../../services/lookupService';
+import { lookupEmail, ContactResult } from '../../services/lookupService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { SearchX } from 'lucide-react';

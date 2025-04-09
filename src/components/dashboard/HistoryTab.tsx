@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TabsTrigger } from '@/components/ui/tabs';
-import { ContactResult } from '../ResultCard';
+import { ContactResult } from '../../services/lookupService';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface HistoryItem extends ContactResult {

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContactResult } from '../components/ResultCard';
+import { ContactResult } from '../services/lookupService';
 import LookupTab from '../components/dashboard/LookupTab';
 import HistoryTab from '../components/dashboard/HistoryTab';
 import { useLanguage } from '../contexts/LanguageContext';
