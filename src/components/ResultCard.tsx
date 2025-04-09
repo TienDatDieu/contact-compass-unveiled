@@ -66,7 +66,8 @@ const ResultCard = ({ result }: ResultCardProps) => {
   const fullName = `${result.name.first} ${result.name.last}`;
   const initials = `${result.name.first.charAt(0)}${result.name.last.charAt(0)}`;
 
-  // Debug the social links
+  // Adding more detailed debug logs for the social links
+  console.log("Full result object:", JSON.stringify(result, null, 2));
   console.log("Social links in ResultCard:", result.social);
 
   return (
@@ -150,6 +151,15 @@ const ResultCard = ({ result }: ResultCardProps) => {
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('results.socialProfiles')}</h3>
               <ul className="space-y-3">
+                {result.social?.github && (
+                  <li>
+                    <a href={result.social.github} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
+                      <Github className="h-4 w-4 mr-2" />
+                      GitHub
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                  </li>
+                )}
                 {result.social?.linkedin && (
                   <li>
                     <a href={result.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
@@ -168,14 +178,8 @@ const ResultCard = ({ result }: ResultCardProps) => {
                     </a>
                   </li>
                 )}
-                {result.social?.github && (
-                  <li>
-                    <a href={result.social.github} target="_blank" rel="noopener noreferrer" className="flex items-center text-primary hover:underline">
-                      <Github className="h-4 w-4 mr-2" />
-                      GitHub
-                      <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </li>
+                {!result.social?.github && !result.social?.linkedin && !result.social?.twitter && (
+                  <li className="text-gray-500 italic">No social profiles found</li>
                 )}
               </ul>
             </div>

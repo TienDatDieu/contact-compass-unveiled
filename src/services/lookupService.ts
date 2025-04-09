@@ -47,20 +47,30 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
+      // Ensure the social object is initialized properly
+      const social: {
+        linkedin?: string;
+        twitter?: string;
+        github?: string;
+      } = {};
+      
+      // Only add properties if they exist in the response
+      if (contactData.linkedin_url) social.linkedin = contactData.linkedin_url;
+      if (contactData.twitter_url) social.twitter = contactData.twitter_url;
+      if (contactData.github_url) social.github = contactData.github_url;
+      
+      console.log("Social links extracted:", social);
+      
       return {
         name: {
           first: firstName,
           last: lastName
         },
         email: contactData.email,
-        company: {
+        company: contactData.company ? {
           name: contactData.company || '',
-        },
-        social: {
-          linkedin: contactData.linkedin_url,
-          twitter: contactData.twitter_url,
-          github: contactData.github_url
-        },
+        } : undefined,
+        social: Object.keys(social).length > 0 ? social : undefined,
         avatar: contactData.avatar_url,
         confidence_score: contactData.confidence_score
       };
