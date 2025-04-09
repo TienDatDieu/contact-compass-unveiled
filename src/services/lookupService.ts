@@ -47,33 +47,46 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Ensure the social object is initialized properly
-      const social: {
-        linkedin?: string;
-        twitter?: string;
-        github?: string;
-      } = {};
+      // Create social object with proper typing
+      const social = {} as { linkedin?: string; twitter?: string; github?: string; };
       
-      // Only add properties if they exist in the response
+      // Only add properties if they exist and are not null
+      if (contactData.github_url) social.github = contactData.github_url;
       if (contactData.linkedin_url) social.linkedin = contactData.linkedin_url;
       if (contactData.twitter_url) social.twitter = contactData.twitter_url;
-      if (contactData.github_url) social.github = contactData.github_url;
       
       console.log("Social links extracted:", social);
       
-      return {
+      const result: ContactResult = {
         name: {
           first: firstName,
           last: lastName
         },
         email: contactData.email,
-        company: contactData.company ? {
-          name: contactData.company || '',
-        } : undefined,
         social: Object.keys(social).length > 0 ? social : undefined,
         avatar: contactData.avatar_url,
         confidence_score: contactData.confidence_score
       };
+      
+      // Only add company if it exists
+      if (contactData.company) {
+        result.company = {
+          name: contactData.company
+        };
+      }
+      
+      // Add location if it exists
+      if (contactData.location) {
+        result.location = contactData.location;
+      }
+      
+      // Add phone if it exists
+      if (contactData.phone) {
+        result.phone = contactData.phone;
+      }
+      
+      console.log("Returning result:", JSON.stringify(result, null, 2));
+      return result;
     }
     
     // No results found

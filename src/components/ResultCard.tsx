@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, Linkedin, Twitter, Github } from 'lucide-react';
+import { Download, ExternalLink, Mail, Phone, Globe, Briefcase, MapPin, Github, Twitter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Linkedin } from 'lucide-react';
 
 export interface ContactResult {
   email: string;
@@ -66,7 +67,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
   const fullName = `${result.name.first} ${result.name.last}`;
   const initials = `${result.name.first.charAt(0)}${result.name.last.charAt(0)}`;
 
-  // Adding more detailed debug logs for the social links
+  // Debug logs for social data
   console.log("Full result object:", JSON.stringify(result, null, 2));
   console.log("Social links in ResultCard:", result.social);
 
@@ -178,7 +179,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
                     </a>
                   </li>
                 )}
-                {!result.social?.github && !result.social?.linkedin && !result.social?.twitter && (
+                {(!result.social || (!result.social.github && !result.social.linkedin && !result.social.twitter)) && (
                   <li className="text-gray-500 italic">No social profiles found</li>
                 )}
               </ul>
