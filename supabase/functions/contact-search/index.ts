@@ -1,19 +1,71 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function extractGitHubNameFromProfile(profileUrl: string): Promise<string | null> {
+  try {
+    console.log("Fetching GitHub profile:", profileUrl);
+    
+    const response = await fetch(profileUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error("Failed to fetch GitHub profile:", response.status);
+      return null;
+    }
+    
+    const html = await response.text();
+    
+    // Use DOM parser to extract the name
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    
+    // Try different selectors to find the name
+    // First try the itemprop="name" attribute
+    let nameElement = doc?.querySelector('span[itemprop="name"]');
+    
+    // If not found, try the p-name class
+    if (!nameElement) {
+      nameElement = doc?.querySelector('.p-name');
+    }
+    
+    // If still not found, try other potential selectors
+    if (!nameElement) {
+      nameElement = doc?.querySelector('.vcard-fullname');
+    }
+    
+    if (nameElement) {
+      const name = nameElement.textContent?.trim();
+      console.log("Extracted GitHub name:", name);
+      return name || null;
+    }
+    
+    console.log("Could not extract name from GitHub profile");
+    return null;
+  } catch (error) {
+    console.error("Error extracting name from GitHub profile:", error);
+    return null;
+  }
+}
+
 async function extractGitHubUsername(email: string): Promise<any> {
   console.log("Searching GitHub for email:", email);
   
   try {
-    // Search Bing for GitHub profile
+    // Search Bing for GitHub profile with the email
     const searchQuery = `${encodeURIComponent(email)} github`;
     const searchUrl = `https://www.bing.com/search?q=${searchQuery}`;
+    
+    console.log("Searching with URL:", searchUrl);
     
     const response = await fetch(searchUrl, {
       headers: {
@@ -28,17 +80,19 @@ async function extractGitHubUsername(email: string): Promise<any> {
     
     const html = await response.text();
     
-    // Extract GitHub URLs
-    const githubRegex = /https:\/\/github\.com\/([^\/"\s]+)/g;
-    const githubMatches = html.match(githubRegex);
+    // Extract GitHub URLs with improved regex
+    const githubRegex = /https:\/\/github\.com\/([^\/"\s]+)(?:\/|"|>|\s)/g;
+    const matches = Array.from(html.matchAll(githubRegex));
     
-    if (!githubMatches || githubMatches.length === 0) {
+    if (!matches || matches.length === 0) {
       console.log("No GitHub profiles found");
       return null;
     }
     
     // Get first GitHub URL and extract username
-    const githubUrl = githubMatches[0];
+    const githubUrl = matches[0][0].replace(/[">]/g, '').trim();
+    console.log("Found GitHub URL:", githubUrl);
+    
     const usernameMatch = githubUrl.match(/github\.com\/([^\/\s]+)/);
     const username = usernameMatch ? usernameMatch[1] : null;
     
@@ -47,24 +101,19 @@ async function extractGitHubUsername(email: string): Promise<any> {
       return null;
     }
     
-    // Fetch GitHub profile data
-    console.log("Fetching GitHub profile data for username:", username);
-    const githubApiResponse = await fetch(`https://api.github.com/users/${username}`);
+    // Extract full name directly from the GitHub profile page
+    const profileUrl = `https://github.com/${username}`;
+    const fullName = await extractGitHubNameFromProfile(profileUrl);
     
-    if (!githubApiResponse.ok) {
-      console.log("GitHub API returned error:", githubApiResponse.status);
-      return null;
-    }
-    
-    const profileData = await githubApiResponse.json();
-    
-    const fullName = profileData.name || username;
+    // Try to find LinkedIn and Twitter profiles
+    const linkedinUrl = await findLinkedInProfile(fullName || username);
+    const twitterUrl = await findTwitterProfile(fullName || username);
     
     return {
-      name: fullName,
-      github_url: profileData.html_url,
-      linkedin_url: await findLinkedInProfile(fullName),
-      twitter_url: await findTwitterProfile(fullName)
+      name: fullName || username,
+      github_url: profileUrl,
+      linkedin_url: linkedinUrl,
+      twitter_url: twitterUrl
     };
   } catch (error) {
     console.error("Error searching GitHub:", error);
@@ -149,14 +198,14 @@ async function saveContactToDatabase(supabaseClient: any, email: string, contact
   try {
     console.log("Saving contact to database:", email);
     
-    // Format the data for insertion
+    // Format the data for insertion or update
     const insertData = {
       email: email,
-      full_name: contactData.name,
-      github_url: contactData.github_url,
-      linkedin_url: contactData.linkedin_url,
-      twitter_url: contactData.twitter_url,
-      confidence_score: 50 // Medium confidence for external searches
+      full_name: contactData.name || null,
+      github_url: contactData.github_url || null,
+      linkedin_url: contactData.linkedin_url || null,
+      twitter_url: contactData.twitter_url || null,
+      confidence_score: contactData.name ? 75 : 50 // Higher confidence if we have a name
     };
     
     // Check if the contact already exists
@@ -235,15 +284,16 @@ serve(async (req) => {
       .eq('email', email)
       .maybeSingle();
     
-    if (!error && existingContact) {
-      console.log("Contact found in database:", existingContact);
+    if (!error && existingContact && existingContact.full_name) {
+      console.log("Contact found in database with name:", existingContact.full_name);
       return new Response(
         JSON.stringify({ success: true, data: existingContact }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // If not in database, search for GitHub and social profiles
+    // If not in database or no name, search for GitHub profile
+    console.log("Searching for GitHub profile for email:", email);
     const contactInfo = await extractGitHubUsername(email);
     
     if (contactInfo) {
@@ -260,7 +310,15 @@ serve(async (req) => {
       }
     }
     
-    // Fallback: create a minimal record if no data was found
+    // Fallback: If existing contact without a name, or create a minimal record if no data was found
+    if (!error && existingContact) {
+      return new Response(
+        JSON.stringify({ success: true, data: existingContact }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Create new minimal contact record
     const username = email.split('@')[0];
     const fallbackData = {
       name: username.charAt(0).toUpperCase() + username.slice(1),
