@@ -47,10 +47,10 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Create social object with proper typing
-      const social = {} as { linkedin?: string; twitter?: string; github?: string; };
+      // Create properly typed social object
+      const social: { linkedin?: string; twitter?: string; github?: string } = {};
       
-      // Only add properties if they exist and are not null
+      // Only add properties if they exist and are not null/empty
       if (contactData.github_url) social.github = contactData.github_url;
       if (contactData.linkedin_url) social.linkedin = contactData.linkedin_url;
       if (contactData.twitter_url) social.twitter = contactData.twitter_url;
@@ -63,6 +63,7 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
           last: lastName
         },
         email: contactData.email,
+        // Only include social if we have at least one link
         social: Object.keys(social).length > 0 ? social : undefined,
         avatar: contactData.avatar_url,
         confidence_score: contactData.confidence_score

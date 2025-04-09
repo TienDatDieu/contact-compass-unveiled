@@ -67,9 +67,12 @@ const ResultCard = ({ result }: ResultCardProps) => {
   const fullName = `${result.name.first} ${result.name.last}`;
   const initials = `${result.name.first.charAt(0)}${result.name.last.charAt(0)}`;
 
-  // Debug logs for social data
+  // Extended debug logs for thorough understanding
   console.log("Full result object:", JSON.stringify(result, null, 2));
   console.log("Social links in ResultCard:", result.social);
+  console.log("GitHub URL:", result.social?.github);
+  console.log("LinkedIn URL:", result.social?.linkedin);
+  console.log("Twitter URL:", result.social?.twitter);
 
   return (
     <Card className="w-full overflow-hidden border-gray-200">
