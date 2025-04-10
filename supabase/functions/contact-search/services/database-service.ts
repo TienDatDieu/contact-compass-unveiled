@@ -16,47 +16,24 @@ export async function saveContactToDatabase(supabaseClient: any, email: string, 
       confidence_score: calculateConfidenceScore(contactData)
     };
     
-    // Check if the contact already exists
-    const { data: existingContact } = await supabaseClient
+    console.log("Data to be inserted/updated:", insertData);
+    
+    // Use upsert to update existing records or insert new ones based on email
+    const { data, error } = await supabaseClient
       .from('contacts')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
+      .upsert(insertData, { 
+        onConflict: 'email',
+        returning: 'representation' 
+      })
+      .select();
     
-    let result;
-    
-    if (existingContact) {
-      // Update existing contact
-      const { data, error } = await supabaseClient
-        .from('contacts')
-        .update(insertData)
-        .eq('id', existingContact.id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error updating contact:", error);
-        return null;
-      }
-      
-      result = data;
-    } else {
-      // Insert new contact
-      const { data, error } = await supabaseClient
-        .from('contacts')
-        .insert(insertData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error inserting contact:", error);
-        return null;
-      }
-      
-      result = data;
+    if (error) {
+      console.error("Error in database operation:", error);
+      return null;
     }
     
-    return result;
+    console.log("Contact saved successfully:", data);
+    return data[0];
   } catch (error) {
     console.error("Error in database operation:", error);
     return null;

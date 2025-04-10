@@ -27,20 +27,17 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
   try {
     console.log("Looking up email:", email);
     
-    // Call our contact-search edge function which handles everything:
+    // Call our searchContactByEmail function which handles everything:
     // 1. Checks if contact exists in database
-    // 2. If not, searches for GitHub/LinkedIn/Twitter profiles
-    // 3. Saves contact data to database
-    // 4. Returns the contact data
-    const response = await supabase.functions.invoke('contact-search', {
-      body: { email }
-    });
+    // 2. If not, invokes the contact-search edge function that:
+    //    a. Searches for GitHub/LinkedIn/Twitter profiles
+    //    b. Saves contact data to database
+    // 3. Returns the contact data
+    const contactData = await searchContactByEmail(email);
     
-    console.log("Edge function response:", response);
+    console.log("Contact data returned:", contactData);
     
-    if (response.data && response.data.success) {
-      const contactData = response.data.data;
-      
+    if (contactData) {
       // Format the contact data from the edge function
       const fullName = contactData.full_name || '';
       const nameParts = fullName.split(' ');
@@ -99,3 +96,6 @@ export async function lookupEmail(email: string): Promise<ContactResult | null> 
     return null;
   }
 }
+
+// Import the searchContactByEmail function directly
+import { searchContactByEmail } from '@/lib/supabase';

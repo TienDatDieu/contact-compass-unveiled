@@ -14,30 +14,40 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export async function searchContactByEmail(email: string) {
   try {
-    // First try to find in users table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('name, email, company')
-      .eq('email', email)
-      .single();
+    console.log("Searching for contact by email:", email);
     
-    if (!userError && userData) {
-      return userData;
-    }
-    
-    // If not found in users, try in contacts table
+    // First check if contact exists in database
     const { data: contactData, error: contactError } = await supabase
       .from('contacts')
       .select('*')
       .eq('email', email)
-      .maybeSingle();  // Using maybeSingle instead of single to avoid error when not found
+      .maybeSingle();
     
     if (contactError) {
-      console.error('Error searching contact:', contactError);
+      console.error('Error searching contact in database:', contactError);
       return null;
     }
     
-    return contactData;
+    // If contact found in database with relevant information, return it
+    if (contactData && (contactData.full_name || contactData.github_url || contactData.linkedin_url || contactData.twitter_url)) {
+      console.log("Contact found in database:", contactData);
+      return contactData;
+    }
+    
+    console.log("Contact not found or incomplete, invoking edge function for search...");
+    
+    // If not found or incomplete data, call the edge function to perform search
+    const response = await supabase.functions.invoke('contact-search', {
+      body: { email }
+    });
+    
+    console.log("Edge function response:", response);
+    
+    if (response.data && response.data.success) {
+      return response.data.data;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error searching contact:', error);
     return null;
