@@ -10,7 +10,10 @@ export async function saveContactToDatabase(supabaseClient: any, email: string, 
       github_url: contactData.github_url || null,
       linkedin_url: contactData.linkedin_url || null,
       twitter_url: contactData.twitter_url || null,
-      confidence_score: contactData.name ? 75 : 50 // Higher confidence if we have a name
+      company: contactData.company || null,
+      location: contactData.location || null,
+      avatar_url: contactData.avatar_url || null,
+      confidence_score: calculateConfidenceScore(contactData)
     };
     
     // Check if the contact already exists
@@ -58,4 +61,20 @@ export async function saveContactToDatabase(supabaseClient: any, email: string, 
     console.error("Error in database operation:", error);
     return null;
   }
+}
+
+// Calculate confidence score based on available data
+function calculateConfidenceScore(contactData: any): number {
+  let score = 50; // Base score
+  
+  if (contactData.github_url) score += 15;
+  if (contactData.linkedin_url) score += 10;
+  if (contactData.twitter_url) score += 5;
+  if (contactData.company) score += 5;
+  if (contactData.location) score += 5;
+  if (contactData.avatar_url) score += 5;
+  if (contactData.name) score += 5;
+  
+  // Cap at 100
+  return Math.min(score, 100);
 }

@@ -47,9 +47,46 @@ export async function extractGitHubUsername(email: string): Promise<any> {
       return null;
     }
     
-    // Extract full name directly from the GitHub profile page
+    // Extract profile information from GitHub profile page
     const profileUrl = `https://github.com/${username}`;
+    
+    // Fetch the profile page
+    const profileResponse = await fetch(profileUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!profileResponse.ok) {
+      console.error("GitHub profile request failed:", profileResponse.status);
+      return null;
+    }
+    
+    const profileHtml = await profileResponse.text();
+    
+    // Extract full name
     const fullName = await extractGitHubNameFromProfile(profileUrl);
+    
+    // Extract company information using regex
+    const companyRegex = /<svg[^>]*class="octicon octicon-organization"[\s\S]*?<\/svg>\s*<span[^>]*>([\s\S]*?)<\/span>/g;
+    const companyMatches = Array.from(profileHtml.matchAll(companyRegex));
+    const company = companyMatches.length > 0 
+      ? companyMatches[0][1].trim().replace(/<[^>]*>/g, '')
+      : null;
+    
+    // Extract location using regex
+    const locationRegex = /<svg[^>]*class="octicon octicon-location"[\s\S]*?<\/svg>\s*<span[^>]*>([\s\S]*?)<\/span>/g;
+    const locationMatches = Array.from(profileHtml.matchAll(locationRegex));
+    const location = locationMatches.length > 0 
+      ? locationMatches[0][1].trim().replace(/<[^>]*>/g, '')
+      : null;
+    
+    // Extract avatar URL using regex
+    const avatarRegex = /<img[^>]*class="avatar[^"]*"[^>]*src="([^"]+)"/g;
+    const avatarMatches = Array.from(profileHtml.matchAll(avatarRegex));
+    const avatarUrl = avatarMatches.length > 0 
+      ? avatarMatches[0][1].trim()
+      : null;
     
     // Try to find LinkedIn and Twitter profiles
     const linkedinUrl = await findLinkedInProfile(fullName || username);
@@ -59,7 +96,10 @@ export async function extractGitHubUsername(email: string): Promise<any> {
       name: fullName || username,
       github_url: profileUrl,
       linkedin_url: linkedinUrl,
-      twitter_url: twitterUrl
+      twitter_url: twitterUrl,
+      company: company,
+      location: location,
+      avatar_url: avatarUrl
     };
   } catch (error) {
     console.error("Error searching GitHub:", error);
