@@ -36,7 +36,8 @@ export async function searchContactByEmail(email: string) {
     
     console.log("Contact not found or incomplete, invoking edge function for search...");
     
-    // If not found or incomplete data, call the edge function to perform search
+    // If not found or incomplete data, call the contact-search edge function to perform search
+    // This will use extractGitHubUsername from github-service.ts to search for GitHub profiles and other info
     const response = await supabase.functions.invoke('contact-search', {
       body: { email }
     });
